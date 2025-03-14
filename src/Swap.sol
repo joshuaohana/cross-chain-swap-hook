@@ -31,6 +31,7 @@ contract SwapHook is BaseHook {
         address tokenIn;
         address tokenOut;
         uint256 amountIn;
+        uint256 amountOutMinimum;
         PoolKey key;
     }
 
@@ -98,6 +99,9 @@ contract SwapHook is BaseHook {
             return (this.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
         }
 
+        // reserve amountOutMinimum from pre-bridged liquidity
+        reservedPreBridgedLiquidity[tokenOut] += amountOutMinimum + (amountOutMinimum / 10); // TODO better calculation?
+
         tokenInCurrency.take(poolManager, address(this), amountIn, false);
 
         PendingSwap storage swap = pendingSwaps[swapId];
@@ -105,6 +109,7 @@ contract SwapHook is BaseHook {
         swap.tokenIn = tokenIn;
         swap.tokenOut = tokenOut;
         swap.amountIn = amountIn;
+        swap.amountOutMinimum = amountOutMinimum;
         swap.key = key;
 
         emit SwapIntent(swapId, swapper, tokenIn, tokenOut, amountIn);
@@ -117,6 +122,11 @@ contract SwapHook is BaseHook {
         external
         returns (uint256 amountOut)
     {
+        // ensure valid swap
+        PendingSwap memory swap = pendingSwaps[swapId];
+        require(swap.owner != address(0), "Swap does not exist");
+
+        // if better price found, process off-chain
         if (betterPriceFound) {
             // revert("Better price found not yet implemented");
             if (offChainSwap.swapId == bytes32(0)) {
@@ -129,11 +139,12 @@ contract SwapHook is BaseHook {
             swapWithBridgedLiquidity(swapId, offChainSwap);
         }
 
+
         // TODO checks and verifications...
         // TODO add flag for to process this normally or off-chain
-        PendingSwap memory swap = pendingSwaps[swapId];
-        require(swap.owner != address(0), "Swap does not exist");
 
+        // adjust reservedPreBridgedLiquidity
+        reservedPreBridgedLiquidity[swap.tokenOut] -= swap.amountOutMinimum + (swap.amountOutMinimum / 10); // TODO better calculation?
         delete pendingSwaps[swapId];
 
         // maybe just pass everything in the data and unlockCallback handles it?
@@ -148,6 +159,13 @@ contract SwapHook is BaseHook {
         internal
         returns (uint256 amountOut)
     {
+        // double check sufficient side liquidity
+        if (preBridgedLiquidity[offChainSwap.tokenOut] < offChainSwap.amountOut) {
+            revert("Insufficient side liquidity");
+        }
+        reservedPreBridgedLiquidity[offChainSwap.tokenOut] -= offChainSwap.amountOut; // TODO use actual amount reserved instead
+        preBridgedLiquidity[offChainSwap.tokenOut] -= offChainSwap.amountOut;
+
         // TODO
     }
 

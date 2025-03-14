@@ -101,7 +101,7 @@ contract SwapComponentsTest is BaseTest {
         );
 
         // Assert: pendingSwaps[swapId] is cleared (owner = address(0))
-        (address owner,,,,) = hook.pendingSwaps(swapIntentDetails.swapId);
+        (address owner,,,,,) = hook.pendingSwaps(swapIntentDetails.swapId);
         assertEq(owner, address(0), "Pending swap should be cleared after completion");
     }
 
@@ -215,4 +215,6 @@ contract SwapComponentsTest is BaseTest {
 
         assertGt(amountOut, 0, "Amount out should be greater than zero");
     }
+
+    // TODO test oneForZero swap
 }

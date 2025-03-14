@@ -48,4 +48,43 @@ contract SideLiquidityUsageTest is BaseTest {
     }
 
     // TODO test reserves are updated correctly
+
+    function test_swap_betterPriceFound_insufficientLiquidity() public {
+        // Arrange:
+        // - no side liquidity
+        
+        // TODO uneeded test but just a double check?
+        
+    }
+
+
+    function test_swap_betterPriceFound_sufficientLiquidity() public {
+        // Arrange:
+        // - have side liquidity
+        
+        // act: do swap with betterPriceFound = true
+        
+        // assert: 
+        // - SwapIntent emitted
+        // - swap completes off-chain
+        // - reserves/pending are updated correctly
+        // - user receives expected token1
+
+        // assert
+
+        // before swap, nothing
+        // after swap, see event
+
+        // while waiting for off-chain bot, see pending swap
+        // reserved pre-bridged liquidity is updated
+        // hook gets token0
+
+        // completeSwap with betterPriceFound = true
+        // hook keeps token0
+        // hook gives token1 to user from its balance
+        // reserved amt updated
+        // pre-bridged liquidity balance updated
+
+        // user ends up down token0 by amountIn, and up token1 > amountOutMinimum
+    }
 }
