@@ -52,19 +52,17 @@ contract SideLiquidityUsageTest is BaseTest {
     function test_swap_betterPriceFound_insufficientLiquidity() public {
         // Arrange:
         // - no side liquidity
-        
-        // TODO uneeded test but just a double check?
-        
-    }
 
+        // TODO uneeded test but just a double check?
+    }
 
     function test_swap_betterPriceFound_sufficientLiquidity() public {
         // Arrange:
         // - have side liquidity
-        
+
         // act: do swap with betterPriceFound = true
-        
-        // assert: 
+
+        // assert:
         // - SwapIntent emitted
         // - swap completes off-chain
         // - reserves/pending are updated correctly

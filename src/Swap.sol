@@ -139,7 +139,6 @@ contract SwapHook is BaseHook {
             swapWithBridgedLiquidity(swapId, offChainSwap);
         }
 
-
         // TODO checks and verifications...
         // TODO add flag for to process this normally or off-chain
 
