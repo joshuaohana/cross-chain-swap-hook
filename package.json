@@ -1,0 +1,13 @@
+{
+  "name": "cross-chain-swap-hook",
+  "version": "1.0.0",
+  "description": "Cross-chain swap hook project",
+  "scripts": {
+    "deploy": "forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast",
+    "swap": "forge script script/Swap.s.sol --rpc-url http://localhost:8545 --broadcast",
+    "completeswap": "forge script script/CompleteSwap.s.sol --rpc-url http://localhost:8545 --broadcast",
+    "test": "forge test"
+  },
+  "author": "",
+  "license": "MIT"
+}
