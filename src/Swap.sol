@@ -10,7 +10,8 @@ import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 import {Currency} from "v4-core/src/types/Currency.sol";
 import {CurrencySettler} from "v4-core/test/utils/CurrencySettler.sol";
 import {TickMath} from "v4-core/src/libraries/TickMath.sol";
-import {console} from "forge-std/console.sol";
+import {ERC20} from "solmate/src/tokens/ERC20.sol";
+
 contract SwapHook is BaseHook {
     using CurrencySettler for Currency;
 
@@ -169,13 +170,18 @@ contract SwapHook is BaseHook {
     }
 
     function depositPreBridgedLiquidity(address token, uint256 amount) external {
-        // TODO implement
+        ERC20(token).transferFrom(msg.sender, address(this), amount);
         preBridgedLiquidity[token] += amount;
+        preBridgedLiquidityDeposits[msg.sender][token] += amount;
+        // TODO emit deposit event
     }
 
     function withdrawPreBridgedLiquidity(address token, uint256 amount) external {
-        // TODO implement
         require(preBridgedLiquidity[token] - reservedPreBridgedLiquidity[token] >= amount, "Insufficient pre-bridged liquidity");
+        require(preBridgedLiquidityDeposits[msg.sender][token] >= amount, "Insufficient pre-bridged liquidity deposits");
+        ERC20(token).transfer(msg.sender, amount);
+        preBridgedLiquidityDeposits[msg.sender][token] -= amount;
         preBridgedLiquidity[token] -= amount;
+        // TODO emit withdraw event
     }
 }

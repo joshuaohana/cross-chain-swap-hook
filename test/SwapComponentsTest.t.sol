@@ -100,8 +100,8 @@ contract SwapComponentsTest is BaseTest {
 
     function test_completeSwap_localSwap_sendsTokenOut() public {
         // Arrange: Trigger a swap, note initial balances
-        Balances memory balancesBefore = getBalances();
         (IPoolManager.SwapParams memory swapParams, bytes memory hookData) = prepSwapWithSideLiquidity(10 ether, 9 ether);
+        Balances memory balancesBefore = getBalances();
 
         vm.recordLogs();
         token0.approve(address(swapRouter), 10 ether);

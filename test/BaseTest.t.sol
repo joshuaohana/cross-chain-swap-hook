@@ -91,8 +91,9 @@ contract BaseTest is Test, Deployers {
 
     // how much token0 you're sending and minimum amount of token1 you'll accept
     function prepSwapWithSideLiquidity(int256 amountInAbs, uint256 amountOutMinimum) internal returns (IPoolManager.SwapParams memory, bytes memory) {
-        // depositPreBridgedLiquidity with 100 ether
-        hook.depositPreBridgedLiquidity(address(token1), amountOutMinimum + (amountOutMinimum / 10));
+        uint256 singleSideLiquidity = amountOutMinimum + (amountOutMinimum / 10);
+        token1.approve(address(hook), singleSideLiquidity);
+        hook.depositPreBridgedLiquidity(address(token1), singleSideLiquidity);
 
         // Arrange: Set up swap params for token0 -> token1
         bytes memory hookData = abi.encode(address(this), amountOutMinimum);

@@ -12,10 +12,9 @@ import {SwapHook} from "../src/Swap.sol";
 contract FullSwapTest is BaseTest {
     // full basic swap workflow with no better price found
     function test_regular_full_swap() public {
-        Balances memory balancesBefore = getBalances();
-
         // setup swap
         (IPoolManager.SwapParams memory swapParams, bytes memory hookData) = prepSwapWithSideLiquidity(10 ether, 9 ether);
+        Balances memory balancesBefore = getBalances();
 
         vm.recordLogs();
 

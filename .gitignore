@@ -19,3 +19,7 @@ lib/
 # Bot
 bot/node_modules/
 bot/dist/
+
+# Test coverage
+coverage_report/
+lcov.info
