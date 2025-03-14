@@ -105,6 +105,19 @@ contract BaseTest is Test, Deployers {
         return (swapParams, hookData);
     }
 
+    function prepSwapWithoutSideLiquidity(int256 amountInAbs, uint256 amountOutMinimum) internal view returns (IPoolManager.SwapParams memory, bytes memory) {
+        // Arrange: Set up swap params for token0 -> token1
+        bytes memory hookData = abi.encode(address(this), amountOutMinimum);
+        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams({
+            zeroForOne: true,
+            amountSpecified: -amountInAbs,
+            sqrtPriceLimitX96: TickMath.MIN_SQRT_PRICE + 1
+        });
+
+        return (swapParams, hookData);
+    }
+    
+
     // static HELPERS
 
     function getBalances() internal view returns (Balances memory) {
