@@ -41,4 +41,6 @@ contract SideLiquidityUsageTest is BaseTest {
         assertEq(balancesAfter.token0User, balancesBefore.token0User - 10 ether, "User should have spent 10 token0");
         assertGt(balancesAfter.token1User, balancesBefore.token1User + amountOutMinimum, "User should have received more than 9 token1");
     }
+
+    // TODO test reserves are updated correctly
 }

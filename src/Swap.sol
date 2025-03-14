@@ -87,7 +87,6 @@ contract SwapHook is BaseHook {
         // TODO allow 0 amountOutMinimum?
         // do we have enough pre-bridged liquidity to process the output?
         if (preBridgedLiquidity[tokenOut] - reservedPreBridgedLiquidity[tokenOut] < amountOutMinimum) {
-            console.log("not enough side liquidity, preBridgedLiquidity[tokenOut], amountOutMinimum", preBridgedLiquidity[tokenOut], amountOutMinimum);
             // no, process normal swap
             return (this.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
         }
