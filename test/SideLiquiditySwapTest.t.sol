@@ -15,7 +15,8 @@ contract SideLiquidityUsageTest is BaseTest {
 
         // Arrange: no side liquidity regular pool
         uint256 amountOutMinimum = 9 ether;
-        (IPoolManager.SwapParams memory swapParams, bytes memory hookData) = prepSwapWithoutSideLiquidity(10 ether, amountOutMinimum);
+        (IPoolManager.SwapParams memory swapParams, bytes memory hookData) =
+            prepSwapWithoutSideLiquidity(10 ether, amountOutMinimum);
 
         // Act: swap
         token0.approve(address(swapRouter), 10 ether);
@@ -39,7 +40,11 @@ contract SideLiquidityUsageTest is BaseTest {
         // asset user spent 10 token0, received 10 token1
         Balances memory balancesAfter = getBalances();
         assertEq(balancesAfter.token0User, balancesBefore.token0User - 10 ether, "User should have spent 10 token0");
-        assertGt(balancesAfter.token1User, balancesBefore.token1User + amountOutMinimum, "User should have received more than 9 token1");
+        assertGt(
+            balancesAfter.token1User,
+            balancesBefore.token1User + amountOutMinimum,
+            "User should have received more than 9 token1"
+        );
     }
 
     // TODO test reserves are updated correctly

@@ -10,7 +10,6 @@ import {PoolSwapTest} from "v4-core/src/test/PoolSwapTest.sol";
 import {SwapHook} from "../src/Swap.sol";
 
 contract SideLiquidityProvideTest is BaseTest {
-    
     function test_deposit_side_liquidity() public {
         // arrange: deposit 10 token0
         Balances memory balancesBefore = getBalances();
@@ -29,9 +28,16 @@ contract SideLiquidityProvideTest is BaseTest {
         assertEq(balancesAfter.token0Hook, balancesBefore.token0Hook + 10 ether, "Hook should have received 10 token0");
 
         assertEq(preBridgedLiquidityAfter, preBridgedLiquidityBefore + 10 ether, "Hook should have received 10 token0");
-        assertEq(reservedPreBridgedLiquidityAfter, reservedPreBridgedLiquidityBefore, "Reserved pre-bridged liquidity should not change");
-        assertEq(hook.preBridgedLiquidityDeposits(address(this), address(token0)), 10 ether, "User allocation should be 10 token0");
-
+        assertEq(
+            reservedPreBridgedLiquidityAfter,
+            reservedPreBridgedLiquidityBefore,
+            "Reserved pre-bridged liquidity should not change"
+        );
+        assertEq(
+            hook.preBridgedLiquidityDeposits(address(this), address(token0)),
+            10 ether,
+            "User allocation should be 10 token0"
+        );
     }
 
     function test_withdraw_side_liquidity() public {
@@ -53,7 +59,11 @@ contract SideLiquidityProvideTest is BaseTest {
         assertEq(balancesAfter.token0Hook, balancesBefore.token0Hook, "Hook's token0 balance should not change");
 
         assertEq(preBridgedLiquidityAfter, preBridgedLiquidityBefore, "Hook's pre-bridged liquidity should not change");
-        assertEq(reservedPreBridgedLiquidityAfter, reservedPreBridgedLiquidityBefore, "Hook's reserved pre-bridged liquidity should not change");
+        assertEq(
+            reservedPreBridgedLiquidityAfter,
+            reservedPreBridgedLiquidityBefore,
+            "Hook's reserved pre-bridged liquidity should not change"
+        );
         assertEq(hook.preBridgedLiquidityDeposits(address(this), address(token0)), 0, "User allocation should be 0");
     }
 }

@@ -45,7 +45,9 @@ contract CompleteSwapScript is Script {
         console.log("Hook Token1:", token1HookBalanceBefore / 1e18, "ether");
 
         // Complete the swap
-        uint256 amountOut = HOOK.completeSwap(swapId, false); // no better price found
+        uint256 amountOut = HOOK.completeSwap(
+            swapId, false, SwapHook.OffChainSwap({swapId: 0, txnId: 0, chainId: 0, tokenOut: address(0), amountOut: 0})
+        ); // no better price found
         console.log("Swap completed, amountOut:", amountOut / 1e18, "ether");
 
         // Record balances after completing swap

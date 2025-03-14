@@ -13,7 +13,8 @@ import {SwapHook} from "../src/Swap.sol";
 contract SwapComponentsTest is BaseTest {
     function test_beforeSwap_emitsSwapIntent() public {
         // Arrange: Set up swap params for token0 -> token1
-        (IPoolManager.SwapParams memory swapParams, bytes memory hookData) = prepSwapWithSideLiquidity(10 ether, 9 ether);
+        (IPoolManager.SwapParams memory swapParams, bytes memory hookData) =
+            prepSwapWithSideLiquidity(10 ether, 9 ether);
 
         // Act: Call _beforeSwap via swapRouter.swap
         vm.recordLogs();
@@ -38,7 +39,8 @@ contract SwapComponentsTest is BaseTest {
     function test_beforeSwap_takesTokenIn() public {
         // Arrange: Approve token0 for swapRouter, set swap params
         Balances memory balancesBefore = getBalances();
-        (IPoolManager.SwapParams memory swapParams, bytes memory hookData) = prepSwapWithSideLiquidity(10 ether, 9 ether);
+        (IPoolManager.SwapParams memory swapParams, bytes memory hookData) =
+            prepSwapWithSideLiquidity(10 ether, 9 ether);
 
         // Act: Call swapRouter.swap to trigger _beforeSwap
         token0.approve(address(swapRouter), 10 ether);
@@ -79,7 +81,8 @@ contract SwapComponentsTest is BaseTest {
 
     function test_completeSwap_localSwap_clearsPendingSwap() public {
         // Arrange: Trigger a swap to create a pendingSwap, get swapId
-        (IPoolManager.SwapParams memory swapParams, bytes memory hookData) = prepSwapWithSideLiquidity(10 ether, 9 ether);
+        (IPoolManager.SwapParams memory swapParams, bytes memory hookData) =
+            prepSwapWithSideLiquidity(10 ether, 9 ether);
 
         vm.recordLogs();
         token0.approve(address(swapRouter), 10 ether);
@@ -91,7 +94,11 @@ contract SwapComponentsTest is BaseTest {
         SwapIntentDetails memory swapIntentDetails = getSwapIntentDetails(logs);
 
         // Act: Call completeSwap(swapId, false)
-        hook.completeSwap(swapIntentDetails.swapId, false);
+        hook.completeSwap(
+            swapIntentDetails.swapId,
+            false,
+            SwapHook.OffChainSwap({swapId: 0, txnId: 0, chainId: 0, tokenOut: address(0), amountOut: 0})
+        );
 
         // Assert: pendingSwaps[swapId] is cleared (owner = address(0))
         (address owner,,,,) = hook.pendingSwaps(swapIntentDetails.swapId);
@@ -100,7 +107,8 @@ contract SwapComponentsTest is BaseTest {
 
     function test_completeSwap_localSwap_sendsTokenOut() public {
         // Arrange: Trigger a swap, note initial balances
-        (IPoolManager.SwapParams memory swapParams, bytes memory hookData) = prepSwapWithSideLiquidity(10 ether, 9 ether);
+        (IPoolManager.SwapParams memory swapParams, bytes memory hookData) =
+            prepSwapWithSideLiquidity(10 ether, 9 ether);
         Balances memory balancesBefore = getBalances();
 
         vm.recordLogs();
@@ -113,7 +121,11 @@ contract SwapComponentsTest is BaseTest {
         SwapIntentDetails memory swapIntentDetails = getSwapIntentDetails(logs);
 
         // Act: Call completeSwap(swapId, false)
-        uint256 amountOut = hook.completeSwap(swapIntentDetails.swapId, false);
+        uint256 amountOut = hook.completeSwap(
+            swapIntentDetails.swapId,
+            false,
+            SwapHook.OffChainSwap({swapId: 0, txnId: 0, chainId: 0, tokenOut: address(0), amountOut: 0})
+        );
 
         // Assert: User receives token1, hook token0 balance resets
         Balances memory balancesAfter = getBalances();
@@ -139,12 +151,17 @@ contract SwapComponentsTest is BaseTest {
 
         // Act & Assert: Call completeSwap(randomSwapId, false), expect revert
         vm.expectRevert("Swap does not exist");
-        hook.completeSwap(randomSwapId, false);
+        hook.completeSwap(
+            randomSwapId,
+            false,
+            SwapHook.OffChainSwap({swapId: 0, txnId: 0, chainId: 0, tokenOut: address(0), amountOut: 0})
+        );
     }
 
     function test_unlockCallback_executesLocalSwap() public {
         // Arrange: Trigger a swap, get swapId
-        (IPoolManager.SwapParams memory swapParams, bytes memory hookData) = prepSwapWithSideLiquidity(10 ether, 9 ether);
+        (IPoolManager.SwapParams memory swapParams, bytes memory hookData) =
+            prepSwapWithSideLiquidity(10 ether, 9 ether);
 
         Balances memory balancesBefore = getBalances();
 
@@ -171,7 +188,11 @@ contract SwapComponentsTest is BaseTest {
         );
 
         // Act: Complete the swap which will trigger unlockCallback internally
-        uint256 amountOut = hook.completeSwap(swapIntentDetails.swapId, false);
+        uint256 amountOut = hook.completeSwap(
+            swapIntentDetails.swapId,
+            false,
+            SwapHook.OffChainSwap({swapId: 0, txnId: 0, chainId: 0, tokenOut: address(0), amountOut: 0})
+        );
 
         // Assert: The swap completed successfully
         Balances memory balancesAfterComplete = getBalances();

@@ -13,7 +13,8 @@ contract FullSwapTest is BaseTest {
     // full basic swap workflow with no better price found
     function test_regular_full_swap() public {
         // setup swap
-        (IPoolManager.SwapParams memory swapParams, bytes memory hookData) = prepSwapWithSideLiquidity(10 ether, 9 ether);
+        (IPoolManager.SwapParams memory swapParams, bytes memory hookData) =
+            prepSwapWithSideLiquidity(10 ether, 9 ether);
         Balances memory balancesBefore = getBalances();
 
         vm.recordLogs();
@@ -65,7 +66,11 @@ contract FullSwapTest is BaseTest {
         );
 
         // complete the swap
-        uint256 amountOut = hook.completeSwap(swapIntentDetails.swapId, false); // no better price found
+        uint256 amountOut = hook.completeSwap(
+            swapIntentDetails.swapId,
+            false,
+            SwapHook.OffChainSwap({swapId: 0, txnId: 0, chainId: 0, tokenOut: address(0), amountOut: 0})
+        ); // no better price found
 
         // then assert that the swap "completed"
         // hook should have same as before

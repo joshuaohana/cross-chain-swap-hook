@@ -63,7 +63,13 @@ class SwapBot {
             await this.printBalances();
 
             // complete the swap
-            await this.hookContract.completeSwap(swapId, false);
+            await this.hookContract.completeSwap(swapId, false, {
+              swapId: 0,
+              txnId: 0,
+              chainId: 0,
+              tokenOut: 0,
+              amountOut: 0,
+            });
 
             console.log("AFTER");
             await this.printBalances();

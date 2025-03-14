@@ -22,10 +22,6 @@ contract SwapHook is BaseHook {
     // track single sided LPs
     mapping(address => mapping(address => uint256)) public preBridgedLiquidityDeposits; // wallet => token => qty
 
-    // (if not enough pre-bridged liquidity, just do local normal swap)
-    // when better price reported by bot, use pre-bridged
-    // deposit and withdraw methods
-
     // TODO how to dole out fees to pre-bridged liquidity providers?
 
     mapping(bytes32 => PendingSwap) public pendingSwaps;
@@ -38,13 +34,24 @@ contract SwapHook is BaseHook {
         PoolKey key;
     }
 
+    // reported by off-chain bot when better price found
+    struct OffChainSwap {
+        bytes32 swapId;
+        bytes32 txnId;
+        uint256 chainId;
+        address tokenOut;
+        uint256 amountOut;
+    }
+
+    // main event for off-chain bot to pick up
     event SwapIntent(
         bytes32 indexed swapId, address indexed owner, address indexed tokenIn, address tokenOut, uint256 amountIn
     );
+    // liquidity events
+    event PreBridgedLiquidityDeposit(address indexed wallet, address indexed token, uint256 amount);
+    event PreBridgedLiquidityWithdraw(address indexed wallet, address indexed token, uint256 amount);
 
-    constructor(IPoolManager poolManager) BaseHook(poolManager) {
-        // pool0 = Pool({
-    }
+    constructor(IPoolManager poolManager) BaseHook(poolManager) {}
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
         return Hooks.Permissions({
@@ -73,7 +80,6 @@ contract SwapHook is BaseHook {
         IPoolManager.SwapParams calldata params,
         bytes calldata hookData
     ) internal override returns (bytes4, BeforeSwapDelta, uint24) {
-
         require(params.amountSpecified < 0, "Exact output not supported");
 
         (address swapper, uint256 amountOutMinimum) = abi.decode(hookData, (address, uint256));
@@ -91,7 +97,7 @@ contract SwapHook is BaseHook {
             // no, process normal swap
             return (this.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
         }
-        
+
         tokenInCurrency.take(poolManager, address(this), amountIn, false);
 
         PendingSwap storage swap = pendingSwaps[swapId];
@@ -106,9 +112,21 @@ contract SwapHook is BaseHook {
         return (this.beforeSwap.selector, beforeSwapDelta, 0);
     }
 
-    function completeSwap(bytes32 swapId, bool betterPriceFound) external returns (uint256 amountOut) {
+    // incoming from off-chain bot
+    function completeSwap(bytes32 swapId, bool betterPriceFound, OffChainSwap memory offChainSwap)
+        external
+        returns (uint256 amountOut)
+    {
         if (betterPriceFound) {
-            revert("Better price found not yet implemented");
+            // revert("Better price found not yet implemented");
+            if (offChainSwap.swapId == bytes32(0)) {
+                revert("No swapId when better price found");
+            }
+            if (offChainSwap.swapId != swapId) {
+                revert("SwapId mismatch");
+            }
+
+            swapWithBridgedLiquidity(swapId, offChainSwap);
         }
 
         // TODO checks and verifications...
@@ -126,6 +144,14 @@ contract SwapHook is BaseHook {
         return amountOut; // TODO do I need to return anything?
     }
 
+    function swapWithBridgedLiquidity(bytes32 swapId, OffChainSwap memory offChainSwap)
+        internal
+        returns (uint256 amountOut)
+    {
+        // TODO
+    }
+
+    // perform the swap normally
     function unlockCallback(bytes calldata data) external returns (bytes memory) {
         require(msg.sender == address(poolManager), "Only pool manager can unlock");
 
@@ -173,15 +199,18 @@ contract SwapHook is BaseHook {
         ERC20(token).transferFrom(msg.sender, address(this), amount);
         preBridgedLiquidity[token] += amount;
         preBridgedLiquidityDeposits[msg.sender][token] += amount;
-        // TODO emit deposit event
+        emit PreBridgedLiquidityDeposit(msg.sender, token, amount);
     }
 
     function withdrawPreBridgedLiquidity(address token, uint256 amount) external {
-        require(preBridgedLiquidity[token] - reservedPreBridgedLiquidity[token] >= amount, "Insufficient pre-bridged liquidity");
+        require(
+            preBridgedLiquidity[token] - reservedPreBridgedLiquidity[token] >= amount,
+            "Insufficient pre-bridged liquidity"
+        );
         require(preBridgedLiquidityDeposits[msg.sender][token] >= amount, "Insufficient pre-bridged liquidity deposits");
         ERC20(token).transfer(msg.sender, amount);
         preBridgedLiquidityDeposits[msg.sender][token] -= amount;
         preBridgedLiquidity[token] -= amount;
-        // TODO emit withdraw event
+        emit PreBridgedLiquidityWithdraw(msg.sender, token, amount);
     }
 }

@@ -90,7 +90,10 @@ contract BaseTest is Test, Deployers {
     // builder HELPERS
 
     // how much token0 you're sending and minimum amount of token1 you'll accept
-    function prepSwapWithSideLiquidity(int256 amountInAbs, uint256 amountOutMinimum) internal returns (IPoolManager.SwapParams memory, bytes memory) {
+    function prepSwapWithSideLiquidity(int256 amountInAbs, uint256 amountOutMinimum)
+        internal
+        returns (IPoolManager.SwapParams memory, bytes memory)
+    {
         uint256 singleSideLiquidity = amountOutMinimum + (amountOutMinimum / 10);
         token1.approve(address(hook), singleSideLiquidity);
         hook.depositPreBridgedLiquidity(address(token1), singleSideLiquidity);
@@ -106,7 +109,11 @@ contract BaseTest is Test, Deployers {
         return (swapParams, hookData);
     }
 
-    function prepSwapWithoutSideLiquidity(int256 amountInAbs, uint256 amountOutMinimum) internal view returns (IPoolManager.SwapParams memory, bytes memory) {
+    function prepSwapWithoutSideLiquidity(int256 amountInAbs, uint256 amountOutMinimum)
+        internal
+        view
+        returns (IPoolManager.SwapParams memory, bytes memory)
+    {
         // Arrange: Set up swap params for token0 -> token1
         bytes memory hookData = abi.encode(address(this), amountOutMinimum);
         IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams({
@@ -117,7 +124,6 @@ contract BaseTest is Test, Deployers {
 
         return (swapParams, hookData);
     }
-    
 
     // static HELPERS
 
