@@ -60,7 +60,21 @@ contract SideLiquidityUsageTest is BaseTest {
         // Arrange:
         // - have side liquidity
 
+        uint256 amountOut = 9 ether;
+        uint256 amountOutMinimum = 9 ether;
+        uint256 amountOutReserves = amountOutMinimum + (amountOutMinimum / 10);
+
+        (IPoolManager.SwapParams memory swapParams, bytes memory hookData) =
+            prepSwapWithSideLiquidity(10 ether, amountOutMinimum);
+        Balances memory balancesBefore = getBalances();
+        uint256 startingToken1SideLiquidity = hook.preBridgedLiquidity(address(token1));
+
         // act: do swap with betterPriceFound = true
+        token0.approve(address(swapRouter), 10 ether);
+        vm.recordLogs();
+        swapRouter.swap(
+            key, swapParams, PoolSwapTest.TestSettings({takeClaims: false, settleUsingBurn: false}), hookData
+        );
 
         // assert:
         // - SwapIntent emitted
@@ -69,19 +83,57 @@ contract SideLiquidityUsageTest is BaseTest {
         // - user receives expected token1
 
         // assert
+        Balances memory balancesMidSwap = getBalances();
 
         // before swap, nothing
         // after swap, see event
 
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        SwapIntentDetails memory swapIntentDetails = getSwapIntentDetails(logs);
+
+        assertNotEq(swapIntentDetails.swapId, bytes32(0), "SwapIntent event should be emitted");
+
         // while waiting for off-chain bot, see pending swap
         // reserved pre-bridged liquidity is updated
+        assertEq(
+            hook.reservedPreBridgedLiquidity(address(token1)),
+            amountOutReserves,
+            "Reserved pre-bridged liquidity should be 9"
+        );
         // hook gets token0
+        assertEq(balancesMidSwap.token0User, balancesBefore.token0User - 10 ether, "User should have spent 10 token0");
+        assertEq(
+            balancesMidSwap.token0Hook, balancesBefore.token0Hook + 10 ether, "Hook should have received 10 token0"
+        );
 
         // completeSwap with betterPriceFound = true
+        hook.completeSwap(
+            swapIntentDetails.swapId,
+            true,
+            SwapHook.OffChainSwap({
+                swapId: swapIntentDetails.swapId,
+                txnId: 0, // TODO verify
+                chainId: 0, // TODO verify
+                tokenOut: address(token1),
+                amountOut: amountOut
+            })
+        );
+
+        Balances memory balancesAfter = getBalances();
         // hook keeps token0
+        assertEq(balancesAfter.token0Hook, balancesMidSwap.token0Hook, "Hook should have kept token0");
         // hook gives token1 to user from its balance
+        assertEq(
+            balancesAfter.token1User, balancesBefore.token1User + amountOutMinimum, "User should have received 9 token1"
+        );
         // reserved amt updated
+        assertEq(hook.reservedPreBridgedLiquidity(address(token1)), 0, "Reserved pre-bridged liquidity should be 0");
         // pre-bridged liquidity balance updated
+        assertEq(
+            hook.preBridgedLiquidity(address(token1)),
+            startingToken1SideLiquidity - amountOut,
+            "Pre-bridged liquidity should be deducted"
+        );
 
         // user ends up down token0 by amountIn, and up token1 > amountOutMinimum
     }

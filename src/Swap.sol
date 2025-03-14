@@ -136,22 +136,22 @@ contract SwapHook is BaseHook {
                 revert("SwapId mismatch");
             }
 
-            swapWithBridgedLiquidity(swapId, offChainSwap);
+            return swapWithBridgedLiquidity(swapId, offChainSwap);
+        } else {
+            // TODO checks and verifications...
+            // TODO add flag for to process this normally or off-chain
+
+            // adjust reservedPreBridgedLiquidity
+            reservedPreBridgedLiquidity[swap.tokenOut] -= swap.amountOutMinimum + (swap.amountOutMinimum / 10); // TODO better calculation?
+            delete pendingSwaps[swapId];
+
+            // maybe just pass everything in the data and unlockCallback handles it?
+            bytes memory data = abi.encode(swap);
+            bytes memory result = poolManager.unlock(data);
+            amountOut = abi.decode(result, (uint256));
+
+            return amountOut; // TODO do I need to return anything?
         }
-
-        // TODO checks and verifications...
-        // TODO add flag for to process this normally or off-chain
-
-        // adjust reservedPreBridgedLiquidity
-        reservedPreBridgedLiquidity[swap.tokenOut] -= swap.amountOutMinimum + (swap.amountOutMinimum / 10); // TODO better calculation?
-        delete pendingSwaps[swapId];
-
-        // maybe just pass everything in the data and unlockCallback handles it?
-        bytes memory data = abi.encode(swap);
-        bytes memory result = poolManager.unlock(data);
-        amountOut = abi.decode(result, (uint256));
-
-        return amountOut; // TODO do I need to return anything?
     }
 
     function swapWithBridgedLiquidity(bytes32 swapId, OffChainSwap memory offChainSwap)
@@ -162,10 +162,18 @@ contract SwapHook is BaseHook {
         if (preBridgedLiquidity[offChainSwap.tokenOut] < offChainSwap.amountOut) {
             revert("Insufficient side liquidity");
         }
-        reservedPreBridgedLiquidity[offChainSwap.tokenOut] -= offChainSwap.amountOut; // TODO use actual amount reserved instead
-        preBridgedLiquidity[offChainSwap.tokenOut] -= offChainSwap.amountOut;
+
+        PendingSwap memory swap = pendingSwaps[swapId];
+        delete pendingSwaps[swapId];
+
+        reservedPreBridgedLiquidity[swap.tokenOut] -= offChainSwap.amountOut + (offChainSwap.amountOut / 10); // TODO use actual amount reserved instead
+        preBridgedLiquidity[swap.tokenOut] -= offChainSwap.amountOut;
+
+        // TODO actually send the token out
+        ERC20(swap.tokenOut).transfer(swap.owner, offChainSwap.amountOut);
 
         // TODO
+        return 0;
     }
 
     // perform the swap normally
