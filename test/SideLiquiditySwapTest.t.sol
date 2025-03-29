@@ -47,15 +47,6 @@ contract SideLiquidityUsageTest is BaseTest {
         );
     }
 
-    // TODO test reserves are updated correctly
-
-    function test_swap_betterPriceFound_insufficientLiquidity() public {
-        // Arrange:
-        // - no side liquidity
-
-        // TODO uneeded test but just a double check?
-    }
-
     function test_swap_betterPriceFound_sufficientLiquidity() public {
         // Arrange:
         // - have side liquidity
@@ -112,8 +103,8 @@ contract SideLiquidityUsageTest is BaseTest {
             true,
             SwapHook.OffChainSwap({
                 swapId: swapIntentDetails.swapId,
-                txnId: 0, // TODO verify
-                chainId: 0, // TODO verify
+                txnId: 0,
+                chainId: 0,
                 tokenOut: address(token1),
                 amountOut: amountOut
             })

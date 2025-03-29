@@ -215,6 +215,4 @@ contract SwapComponentsTest is BaseTest {
 
         assertGt(amountOut, 0, "Amount out should be greater than zero");
     }
-
-    // TODO test oneForZero swap
 }

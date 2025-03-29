@@ -28,7 +28,6 @@ export default function SwapInterface() {
   const [swapStatus, setSwapStatus] = useState<string>("");
   const [allowance, setAllowance] = useState<bigint>(BigInt(0));
 
-  // TODO Placeholder for swap rate calculation
   const rate = 1.05;
 
   // Get the current allowance when component mounts or when address/swap direction changes

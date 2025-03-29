@@ -3,22 +3,13 @@ TODO List for SwapHook Project
 Wire Up a Bot to Call completeSwap
   already have the bot and it listens fine, just need to call complete
 
-Test out scripts and see the bot call complete, print balances after
-
 add whitelist and unit tests
 
-build mega basic ui, connect wallet, do the swap (which does the pause and everything)
-  show little explanation dealie in ui
-  need extra event emits in swap I think?
-
-no, done with single chain full workflow! onto the hard part
+hook up swap to ui
 
 first step towards multi chain...
   1) have the bot CHECK and compare prices on another network
     a) that means I need to have scripts to deploy multiple chains with different liquidities and stuff
-    b) okay
-  2) start designing the single sided liquidity and what all that'll consist of...
-
 
 - start keeping a running track of unsolved problems
 
@@ -71,3 +62,20 @@ AVS or similar for swaps and solver system for rebalancing are technically chall
 
 Team;
 Solo
+
+
+How it works;
+Pools have standard two-sided liquidity for regular swaps, plus pre-bridged single-sided liquidity for cross-chain arbitrage
+Example: Alice deposits 10 ETH into the pre-bridged pool on Arbitrum, Bob deposits 20k USDC on Base
+Carol swaps 1 ETH for USDC on Base. The hook takes her 1 ETH (+1 ETH to hook)
+The bot finds a better trade on Arbitrum, uses pre-bridged ETH there to buy 2005 USDC (-1 ETH, +2005 USDC to hook), then delivers 2005 USDC to Carol on Base (-2005 USDC from hook).
+Hook's single-token pool balances stay neutral net net across chains
+The hook would charge a percentage of the trade's additional profits to pay the solver and balancers/bridging
+
+LPs;
+Alice would always withdraw 100% of her position in ETH, Bob in USDC, same tokens they deposited
+Post-swap, a balancer (or manual process for now) shifts 1 ETH from Base to Arbitrum and 2005 USDC from Arbitrum to Base to reset
+
+Related challenges;
+If liquidity fragments across chains, withdrawals might need multi-chain support, or the balancer must guarantee enough liquidity on the LP’s original chain
+For the POC, I may handle rebalancing manually or with a basic script, the core idea should hold either way

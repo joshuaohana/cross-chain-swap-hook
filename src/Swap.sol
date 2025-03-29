@@ -22,8 +22,6 @@ contract SwapHook is BaseHook {
     // track single sided LPs
     mapping(address => mapping(address => uint256)) public preBridgedLiquidityDeposits; // wallet => token => qty
 
-    // TODO how to dole out fees to pre-bridged liquidity providers?
-
     mapping(bytes32 => PendingSwap) public pendingSwaps;
 
     struct PendingSwap {
@@ -92,7 +90,6 @@ contract SwapHook is BaseHook {
 
         bytes32 swapId = keccak256(abi.encode(swapper, key, params, block.number));
 
-        // TODO allow 0 amountOutMinimum?
         // do we have enough pre-bridged liquidity to process the output?
         if (preBridgedLiquidity[tokenOut] - reservedPreBridgedLiquidity[tokenOut] < amountOutMinimum) {
             // no, process normal swap
@@ -100,7 +97,7 @@ contract SwapHook is BaseHook {
         }
 
         // reserve amountOutMinimum from pre-bridged liquidity
-        reservedPreBridgedLiquidity[tokenOut] += amountOutMinimum + (amountOutMinimum / 10); // TODO better calculation?
+        reservedPreBridgedLiquidity[tokenOut] += amountOutMinimum + (amountOutMinimum / 10);
 
         tokenInCurrency.take(poolManager, address(this), amountIn, false);
 
@@ -138,11 +135,8 @@ contract SwapHook is BaseHook {
 
             return swapWithBridgedLiquidity(swapId, offChainSwap);
         } else {
-            // TODO checks and verifications...
-            // TODO add flag for to process this normally or off-chain
-
             // adjust reservedPreBridgedLiquidity
-            reservedPreBridgedLiquidity[swap.tokenOut] -= swap.amountOutMinimum + (swap.amountOutMinimum / 10); // TODO better calculation?
+            reservedPreBridgedLiquidity[swap.tokenOut] -= swap.amountOutMinimum + (swap.amountOutMinimum / 10);
             delete pendingSwaps[swapId];
 
             // maybe just pass everything in the data and unlockCallback handles it?
@@ -150,7 +144,7 @@ contract SwapHook is BaseHook {
             bytes memory result = poolManager.unlock(data);
             amountOut = abi.decode(result, (uint256));
 
-            return amountOut; // TODO do I need to return anything?
+            return amountOut;
         }
     }
 
@@ -166,14 +160,13 @@ contract SwapHook is BaseHook {
         PendingSwap memory swap = pendingSwaps[swapId];
         delete pendingSwaps[swapId];
 
-        reservedPreBridgedLiquidity[swap.tokenOut] -= offChainSwap.amountOut + (offChainSwap.amountOut / 10); // TODO use actual amount reserved instead
+        reservedPreBridgedLiquidity[swap.tokenOut] -= offChainSwap.amountOut + (offChainSwap.amountOut / 10);
         preBridgedLiquidity[swap.tokenOut] -= offChainSwap.amountOut;
 
-        // TODO actually send the token out
+        // actually send the token out
         ERC20(swap.tokenOut).transfer(swap.owner, offChainSwap.amountOut);
 
-        // TODO
-        return 0;
+        return offChainSwap.amountOut;
     }
 
     // perform the swap normally
@@ -182,7 +175,6 @@ contract SwapHook is BaseHook {
 
         PendingSwap memory swap = abi.decode(data, (PendingSwap));
 
-        // TODO handle fees
         // charge fees as hook fees initially
         // as part of off-chain bot, track fees over time
         // every X hours, split them up and move them around from the bot
@@ -194,18 +186,17 @@ contract SwapHook is BaseHook {
             amountSpecified: -int256(swap.amountIn),
             sqrtPriceLimitX96: swap.tokenIn == Currency.unwrap(swap.key.currency0)
                 ? TickMath.MIN_SQRT_PRICE + 1
-                : TickMath.MAX_SQRT_PRICE - 1 // TODO understand this
+                : TickMath.MAX_SQRT_PRICE - 1
         });
 
         Currency tokenInCurrency = Currency.wrap(swap.tokenIn);
         tokenInCurrency.settle(poolManager, address(this), swap.amountIn, false);
 
-        bytes memory hookData = abi.encode(swap.owner); // TODO do I actually need this? don't think so
+        bytes memory hookData = abi.encode(swap.owner);
         BalanceDelta delta = poolManager.swap(swap.key, params, hookData);
 
         uint256 amountOut;
 
-        // TODO do we need this check?
         if (params.zeroForOne) {
             require(delta.amount1() > 0, "Invalid output delta"); // Output should be positive
             amountOut = uint256(int256(delta.amount1()));
